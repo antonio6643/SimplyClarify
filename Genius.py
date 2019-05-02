@@ -1,89 +1,14 @@
 import aLEXis as alexis
 import math
+from Tokens import *
 
-class NumberToken(alexis.Token):
-
-	identifiers = "1234567890.,"
-
-	def __init__(self, lineNum, columnNum, truePosition, data):
-		super().__init__(lineNum, columnNum, truePosition, data)
-
-class OperatorToken(alexis.Token):
-
-	identifiers = "+-/*^"
-
-	def __init__(self, lineNum, columnNum, truePosition, data):
-		super().__init__(lineNum, columnNum, truePosition, data)
-
-	def Solve(self):
-		selfPosition = self.parent.index(self)
-		if selfPosition == len(self.parent)-1 or selfPosition <= 0:
-			return False
-		else:
-			left = self.parent[selfPosition-1]
-			right = self.parent[selfPosition+1]
-			# print(">",left, right,"<")
-			if self.data == '+':
-				Simplified = NumberToken(self.line, self.column, self.truePosition, float(left.data)+float(right.data))
-			elif self.data == "/":
-				Simplified = NumberToken(self.line, self.column, self.truePosition, float(left.data)/float(right.data))
-			elif self.data == "*":
-				Simplified = NumberToken(self.line, self.column, self.truePosition, float(left.data)*float(right.data))
-			elif self.data == "-":
-				Simplified = NumberToken(self.line, self.column, self.truePosition, float(left.data)-float(right.data))
-			elif self.data == "^":
-				Simplified = NumberToken(self.line, self.column, self.truePosition, float(left.data)**float(right.data))
-				
-			self.parent[selfPosition-1] = Simplified
-			del self.parent[selfPosition+1]
-			del self.parent[selfPosition]
-			if not isinstance(self.parent, list):
-				self.parent.recast()
-
-class SeperatorToken(alexis.Token):
-	
-	identifiers = ","
-
-	def __init__(self, lineNum, columnNum, truePosition, data):
-		super().__init__(lineNum, columnNum, truePosition, data)
-
-class KeywordToken(alexis.Token):
-
-	def __init__(self, lineNum, columnNum, truePosition, data):
-		super().__init__(lineNum, columnNum, truePosition, data)
-
-	def Solve(self):
-		selfPosition = self.parent.index(self)
-		if selfPosition == len(self.parent)-1:
-			return False
-		else:
-			right = self.parent[selfPosition+1]
-			if hasattr(math, self.data.lower()):
-				Knu = getattr(math, self.data.lower())( *right.packageNumbers() )
-				Simplified = NumberToken(self.line, self.column, self.truePosition, Knu)
-			self.parent[selfPosition] = Simplified
-			del self.parent[selfPosition+1]
-			if not isinstance(self.parent, list):
-				self.parent.recast()
-
-	@classmethod
-	def isValidCharacter(cls, char):
-		return char not in "()" # This makes it so this *has* to be the last token in the registry
-
-class ComparisonToken(alexis.Token):
-	
-	identifiers = "=><"
-
-	def __init__(self, lineNum, columnNum, truePosition, data):
-		super().__init__(lineNum, columnNum, truePosition, data)
-
-class GroupingToken(alexis.Token):
-	
-	identifiers = "()"
-	OnlyOne = True
-
-	def __init__(self, lineNum, columnNum, truePosition, data):
-		super().__init__(lineNum, columnNum, truePosition, data)
+OrderOfOperations = {
+	'^' : 1,
+	'*' : 2,
+	'/' : 2,
+	'+' : 3,
+	'-' : 3
+}
 
 SolverRegistry = alexis.TokenRegistry([NumberToken, GroupingToken, OperatorToken, ComparisonToken, SeperatorToken, KeywordToken])
 
@@ -160,9 +85,6 @@ def RefactorTokens(tokens):
 				Knu.append(current)
 	return Knu
 
-def getTokenByClass(tokenList, classType):
-	return [group for group in tokenList if isinstance(group, Grouping)]
-
 def firstByOrder(tokenList, priorities: dict):
 	if len(tokenList) == 0: return None
 	important = None
@@ -171,16 +93,8 @@ def firstByOrder(tokenList, priorities: dict):
 			important = t
 	return important
 
-OrderOfOperations = {
-	'^' : 1,
-	'*' : 2,
-	'/' : 2,
-	'+' : 3,
-	'-' : 3
-}
-
 def SimplifyGroup(group: Grouping):
-	internalGroups = getTokenByClass(group.tokens, Grouping)
+	internalGroups = [g for g in group.tokens if isinstance(g, Grouping)]
 	for g in internalGroups:
 		SimplifyGroup(g)
 	Operation = firstByOrder(group.tokens, OrderOfOperations)
