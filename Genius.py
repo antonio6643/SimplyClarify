@@ -59,7 +59,8 @@ class KeywordToken(alexis.Token):
 		else:
 			right = self.parent[selfPosition+1]
 			if hasattr(math, self.data.lower()):
-				Simplified = NumberToken(self.line, self.column, self.truePosition, getattr(math, self.data.lower())(float(right.data)))
+				Knu = getattr(math, self.data.lower())( *right.packageNumbers() )
+				Simplified = NumberToken(self.line, self.column, self.truePosition, Knu)
 			self.parent[selfPosition] = Simplified
 			del self.parent[selfPosition+1]
 			if not isinstance(self.parent, list):
@@ -120,9 +121,15 @@ class Grouping:
 		return self.tokens.index(target)
 
 	def recast(self):
+		myIndex = self.parent.index(self)
 		if len(self.tokens) == 1:
-			myIndex = self.parent.index(self)
-			self.parent[myIndex] = self.tokens[0]
+			if myIndex == 0 or not isinstance(self.parent[myIndex-1], KeywordToken):
+				myIndex = self.parent.index(self)
+				self.parent[myIndex] = self.tokens[0]
+
+	def packageNumbers(self):
+		return [float(token.data) for token in self.tokens if isinstance(token, NumberToken)]
+				
 
 # Functions
 
@@ -185,6 +192,9 @@ def SimplifyEquation(tokens):
 	Groupings = [g for g in tokens if isinstance(g, Grouping)]
 	for g in Groupings:
 		SimplifyGroup(g)
+	Functions = [f for f in tokens if isinstance(f, KeywordToken)]
+	for f in Functions:
+		f.Solve()
 	Operation = firstByOrder(tokens, OrderOfOperations)
 	while Operation:
 		Operation.Solve()
@@ -192,15 +202,8 @@ def SimplifyEquation(tokens):
 	return tokens
 # print("Starting solve")
 Equation = input("Input a normal expression: ")
-Debug = False
-
-if Equation == "DEBUG":
-	Debug = True
-	Equation = "sqrt(2)"
 
 Alexios = alexis.Lexer(Equation, SolverRegistry, BurnSticks=True) # Totally not an AC Odyssey reference O_O
 Alexios.FullParse()
 ParsedTokens = RefactorTokens(TokenList(RefactorTokens(Alexios.tokens)))
-if Debug:
-	print(ParsedTokens)
 print(SimplifyEquation(ParsedTokens))
