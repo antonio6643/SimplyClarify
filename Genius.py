@@ -49,8 +49,8 @@ class Grouping:
 		myIndex = self.parent.index(self)
 		if len(self.tokens) == 1:
 			if myIndex == 0 or not isinstance(self.parent[myIndex-1], KeywordToken):
-				myIndex = self.parent.index(self)
 				self.parent[myIndex] = self.tokens[0]
+				self.parent = None
 
 	def packageNumbers(self):
 		return [float(token.data) for token in self.tokens if isinstance(token, NumberToken)]
@@ -98,9 +98,11 @@ def SimplifyGroup(group: Grouping):
 	for g in internalGroups:
 		SimplifyGroup(g)
 	Operation = firstByOrder(group.tokens, OrderOfOperations)
-	if Operation:
+	while Operation:
 		Operation.Solve()
-	group.recast()
+		Operation = firstByOrder(group.tokens, OrderOfOperations)
+	if group.parent:
+		group.recast()
 
 def SimplifyEquation(tokens):
 	Groupings = [g for g in tokens if isinstance(g, Grouping)]
@@ -114,7 +116,7 @@ def SimplifyEquation(tokens):
 		Operation.Solve()
 		Operation = firstByOrder(tokens, OrderOfOperations)
 	return tokens
-# print("Starting solve")
+
 Equation = input("Input a normal expression: ")
 
 Alexios = alexis.Lexer(Equation, SolverRegistry, BurnSticks=True) # Totally not an AC Odyssey reference O_O

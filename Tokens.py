@@ -22,6 +22,8 @@ class OperatorToken(alexis.Token):
 			left = self.parent[selfPosition-1]
 			right = self.parent[selfPosition+1]
 			# print(">",left, right,"<")
+			if not isinstance(right, alexis.Token):
+				print(right)
 			if self.data == '+':
 				Simplified = NumberToken(self.line, self.column, self.truePosition, float(left.data)+float(right.data))
 			elif self.data == "/":
