@@ -68,10 +68,8 @@ def RefactorTokens(tokens):
 				parent = Knu if len(GroupingStates) == 0 else GroupingStates[-1]
 				knuGroup = Grouping(len(GroupingStates)+1, parent)
 				GroupingStates.append(knuGroup)
-				#knuGroup.AddToken(current)
 			else: # It's closing
 				kGroup = GroupingStates.pop()
-				#kGroup.AddToken(current)
 				if len(GroupingStates) == 0:
 					Knu.append(kGroup)
 				else:
