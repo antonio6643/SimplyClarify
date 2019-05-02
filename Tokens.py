@@ -1,3 +1,5 @@
+import aLEXis as alexis
+
 class NumberToken(alexis.Token):
 
 	identifiers = "1234567890.,"
