@@ -1,5 +1,4 @@
 import aLEXis as alexis
-import math
 from Tokens import *
 
 OrderOfOperations = {
@@ -102,7 +101,7 @@ def SimplifyGroup(group: Grouping):
 	if group.parent:
 		group.recast()
 
-def SimplifyEquation(tokens):
+def SimplifyExpression(tokens):
 	Groupings = [g for g in tokens if isinstance(g, Grouping)]
 	for g in Groupings:
 		SimplifyGroup(g)
@@ -115,9 +114,24 @@ def SimplifyEquation(tokens):
 		Operation = firstByOrder(tokens, OrderOfOperations)
 	return tokens
 
-Equation = input("Input a normal expression: ")
+class Expression:
+	def __init__(self, expression):
+		self.expression = expression
+		self.result = None
 
-Alexios = alexis.Lexer(Equation, SolverRegistry, BurnSticks=True) # Totally not an AC Odyssey reference O_O
-Alexios.FullParse()
-ParsedTokens = RefactorTokens(TokenList(RefactorTokens(Alexios.tokens)))
-print(SimplifyEquation(ParsedTokens))
+	def Simplify(self):
+		Alexios = alexis.Lexer(self.expression, SolverRegistry, BurnSticks=True)
+		Alexios.FullParse()
+		ParsedTokens = RefactorTokens(TokenList(RefactorTokens(Alexios.tokens)))
+		Simple = SimplifyExpression(ParsedTokens)
+		if len(Simple) == 1:
+			self.result = Simple[0]
+		else:
+			self.result = Simple
+
+
+if __name__ == "__main__":
+	request = input("Input an expression: ")
+	express = Expression(request)
+	express.Simplify()
+	print(express.result)
