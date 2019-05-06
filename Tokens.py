@@ -36,7 +36,8 @@ class OperatorToken(alexis.Token):
 				Simplified = NumberToken(self.line, self.column, self.truePosition, float(left.data)-float(right.data))
 			elif self.data == "^":
 				Simplified = NumberToken(self.line, self.column, self.truePosition, float(left.data)**float(right.data))
-				
+			
+			Simplified.parent = self.parent
 			self.parent[selfPosition-1] = Simplified
 			del self.parent[selfPosition+1]
 			del self.parent[selfPosition]
@@ -57,16 +58,19 @@ class KeywordToken(alexis.Token):
 
 	def Solve(self):
 		selfPosition = self.parent.index(self)
-		if selfPosition == len(self.parent)-1:
-			return False
+		if self.data in CONSTANTS:
+			Knu = NumberToken(self.line, self.column, self.truePosition, CONSTANTS[self.data])
+			Knu.parent = self.parent
+			self.parent[selfPosition] = Knu
 		else:
-			if self.data in CONSTANTS:
-				self.parent[selfPosition] = CONSTANTS[self.data]
+			if selfPosition == len(self.parent)-1:
+				return False
 			else:
 				right = self.parent[selfPosition+1]
 				if hasattr(math, self.data.lower()):
 					Knu = getattr(math, self.data.lower())( *right.packageNumbers() )
 					Simplified = NumberToken(self.line, self.column, self.truePosition, Knu)
+				Simplified.parent = self.parent
 				self.parent[selfPosition] = Simplified
 				del self.parent[selfPosition+1]
 				if not isinstance(self.parent, list):
@@ -74,7 +78,7 @@ class KeywordToken(alexis.Token):
 
 	@classmethod
 	def isValidCharacter(cls, char):
-		return char not in "()" # This makes it so this *has* to be the last token in the registry
+		return char.lower()	in "abcdefghijklmnpqrstuvwxyz" # This makes it so this *has* to be the last token in the registry
 
 class ComparisonToken(alexis.Token):
 	

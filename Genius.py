@@ -102,16 +102,39 @@ def SimplifyGroup(group: Grouping):
 		group.recast()
 
 def SimplifyExpression(tokens):
+	# Solve Groups
 	Groupings = [g for g in tokens if isinstance(g, Grouping)]
 	for g in Groupings:
 		SimplifyGroup(g)
+	# Solve Functions
 	Functions = [f for f in tokens if isinstance(f, KeywordToken)]
 	for f in Functions:
 		f.Solve()
+	# Add in implied multiplication
+	Numbers = [n for n in tokens if isinstance(n, NumberToken)]
+	Combinations = []
+	for n in Numbers:
+		me = n.parent.index(n)
+		if me != len(n.parent)-1:
+			future = n.parent[me+1]
+			if isinstance(future, NumberToken) and future.parent == n.parent:
+				Combinations.append(future)
+				# knu = OperatorToken(future.line, future.column, future.truePosition, '*')
+				# knu.parent = future.parent
+				# n.parent.insert(me+1, knu)
+	
+	for future in Combinations:
+		pre = future.parent.index(future)
+		knu = OperatorToken(future.line, future.column, future.truePosition, '*')
+		knu.parent = future.parent
+		future.parent.insert(pre, knu)
+	
 	Operation = firstByOrder(tokens, OrderOfOperations)
 	while Operation:
+		print("Solving", Operation)
 		Operation.Solve()
 		Operation = firstByOrder(tokens, OrderOfOperations)
+
 	return tokens
 
 class Expression:
@@ -123,6 +146,7 @@ class Expression:
 		Alexios = alexis.Lexer(self.expression, SolverRegistry, BurnSticks=True)
 		Alexios.FullParse()
 		ParsedTokens = RefactorTokens(TokenList(RefactorTokens(Alexios.tokens)))
+		print(ParsedTokens)
 		Simple = SimplifyExpression(ParsedTokens)
 		if len(Simple) == 1:
 			self.result = Simple[0]
