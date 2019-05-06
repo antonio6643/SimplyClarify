@@ -119,9 +119,6 @@ def SimplifyExpression(tokens):
 			future = n.parent[me+1]
 			if isinstance(future, NumberToken) and future.parent == n.parent:
 				Combinations.append(future)
-				# knu = OperatorToken(future.line, future.column, future.truePosition, '*')
-				# knu.parent = future.parent
-				# n.parent.insert(me+1, knu)
 	
 	for future in Combinations:
 		pre = future.parent.index(future)
