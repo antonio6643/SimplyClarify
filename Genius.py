@@ -128,7 +128,6 @@ def SimplifyExpression(tokens):
 	
 	Operation = firstByOrder(tokens, OrderOfOperations)
 	while Operation:
-		print("Solving", Operation)
 		Operation.Solve()
 		Operation = firstByOrder(tokens, OrderOfOperations)
 
@@ -143,7 +142,6 @@ class Expression:
 		Alexios = alexis.Lexer(self.expression, SolverRegistry, BurnSticks=True)
 		Alexios.FullParse()
 		ParsedTokens = RefactorTokens(TokenList(RefactorTokens(Alexios.tokens)))
-		print(ParsedTokens)
 		Simple = SimplifyExpression(ParsedTokens)
 		if len(Simple) == 1:
 			self.result = Simple[0]
