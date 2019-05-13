@@ -181,10 +181,6 @@ class Expression:
 		else:
 			self.result = Simple
 
-# TODO: Solve innermost functions/constants first
-	# You can do this my solving the functions starting from the back and moving up the tokenlist.
-	# Or you can just differentiate between functions and constants. Probably a good idea to do this.
-
 if __name__ == "__main__":
 	request = input("Input an expression: ")
 	express = Expression(request)
