@@ -172,7 +172,7 @@ class Expression:
 		self.result = None
 
 	def Simplify(self):
-		Alexios = alexis.Lexer(self.expression, SolverRegistry, BurnSticks=True)
+		Alexios = alexis.Lexer(self.expression, SolverRegistry)
 		Alexios.FullParse()
 		ParsedTokens = RefactorTokens(TokenList(RefactorTokens(Alexios.tokens)))
 		Simple = SimplifyExpression(ParsedTokens)
