@@ -1,10 +1,6 @@
 import aLEXis as alexis
 import math
 
-CONSTANTS = {
-	"pi" : math.pi
-}
-
 class NumberToken(alexis.Token):
 
 	identifiers = "1234567890.,"
@@ -58,23 +54,18 @@ class KeywordToken(alexis.Token):
 
 	def Solve(self):
 		selfPosition = self.parent.index(self)
-		if self.data in CONSTANTS:
-			Knu = NumberToken(self.line, self.column, self.truePosition, CONSTANTS[self.data])
-			Knu.parent = self.parent
-			self.parent[selfPosition] = Knu
+		if selfPosition == len(self.parent)-1:
+			return False
 		else:
-			if selfPosition == len(self.parent)-1:
-				return False
-			else:
-				right = self.parent[selfPosition+1]
-				if hasattr(math, self.data.lower()):
-					Knu = getattr(math, self.data.lower())( *right.packageNumbers() )
-					Simplified = NumberToken(self.line, self.column, self.truePosition, Knu)
-				Simplified.parent = self.parent
-				self.parent[selfPosition] = Simplified
-				del self.parent[selfPosition+1]
-				if not isinstance(self.parent, list):
-					self.parent.recast()
+			right = self.parent[selfPosition+1]
+			if hasattr(math, self.data.lower()):
+				Knu = getattr(math, self.data.lower())( *right.packageNumbers() )
+				Simplified = NumberToken(self.line, self.column, self.truePosition, Knu)
+			Simplified.parent = self.parent
+			self.parent[selfPosition] = Simplified
+			del self.parent[selfPosition+1]
+			if not isinstance(self.parent, list):
+				self.parent.recast()
 
 	@classmethod
 	def isValidCharacter(cls, char):

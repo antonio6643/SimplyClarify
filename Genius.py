@@ -1,4 +1,5 @@
 import aLEXis as alexis
+import math
 from Tokens import *
 
 OrderOfOperations = {
@@ -7,6 +8,11 @@ OrderOfOperations = {
 	'/' : 2,
 	'+' : 3,
 	'-' : 3
+}
+
+CONSTANTS = {
+	"pi" : math.pi,
+	"e" : math.e,
 }
 
 SolverRegistry = alexis.TokenRegistry([NumberToken, GroupingToken, OperatorToken, ComparisonToken, SeperatorToken, KeywordToken])
@@ -44,6 +50,9 @@ class Grouping:
 	def index(self, target):
 		return self.tokens.index(target)
 
+	def insert(self, position, obj):
+		return self.tokens.insert(position, obj)
+
 	def recast(self):
 		myIndex = self.parent.index(self)
 		if len(self.tokens) == 1:
@@ -74,6 +83,9 @@ def RefactorTokens(tokens):
 				else:
 					GroupingStates[-1].AddToken(kGroup)
 		else: # regular token
+			if isinstance(current, KeywordToken):
+				if current.data.lower() in CONSTANTS:
+					current = NumberToken(current.line, current.column, current.truePosition, CONSTANTS[current.data.lower()])
 			if len(GroupingStates) > 0:
 				lastGroup = GroupingStates[-1]
 				lastGroup.AddToken(current)
@@ -90,27 +102,21 @@ def firstByOrder(tokenList, priorities: dict):
 			important = t
 	return important
 
-def SimplifyGroup(group: Grouping):
-	internalGroups = [g for g in group.tokens if isinstance(g, Grouping)]
-	for g in internalGroups:
-		SimplifyGroup(g)
-	Operation = firstByOrder(group.tokens, OrderOfOperations)
-	while Operation:
-		Operation.Solve()
-		Operation = firstByOrder(group.tokens, OrderOfOperations)
-	if group.parent:
-		group.recast()
+def getAllChildrenAs(tokenList, baseclass):
+	collection = []
+	if isinstance(tokenList, Grouping):
+		children = tokenList.tokens
+	else:
+		children = tokenList
+	for t in children:
+		if isinstance(t, baseclass):
+			collection.append(t)
+		elif isinstance(t, Grouping):
+			validChildren = getAllChildrenAs(t, baseclass)
+			collection.extend(validChildren)
+	return collection
 
-def SimplifyExpression(tokens):
-	# Solve Groups
-	Groupings = [g for g in tokens if isinstance(g, Grouping)]
-	for g in Groupings:
-		SimplifyGroup(g)
-	# Solve Functions
-	Functions = [f for f in tokens if isinstance(f, KeywordToken)]
-	for f in Functions:
-		f.Solve()
-	# Add in implied multiplication
+def HandleImplications(tokens):
 	Numbers = [n for n in tokens if isinstance(n, NumberToken)]
 	Combinations = []
 	for n in Numbers:
@@ -119,12 +125,39 @@ def SimplifyExpression(tokens):
 			future = n.parent[me+1]
 			if isinstance(future, NumberToken) and future.parent == n.parent:
 				Combinations.append(future)
-	
 	for future in Combinations:
 		pre = future.parent.index(future)
 		knu = OperatorToken(future.line, future.column, future.truePosition, '*')
 		knu.parent = future.parent
 		future.parent.insert(pre, knu)
+
+def SimplifyGroup(group: Grouping):
+	HandleImplications(group)
+	internalGroups = [g for g in group.tokens if isinstance(g, Grouping)]
+	for g in internalGroups:
+		HandleImplications(g.tokens)
+		SimplifyGroup(g)
+	Functions = [f for f in group.tokens if isinstance(f, KeywordToken)]
+	for f in Functions:
+		f.Solve()
+	Operation = firstByOrder(group.tokens, OrderOfOperations)
+	while Operation:
+		Operation.Solve()
+		Operation = firstByOrder(group.tokens, OrderOfOperations)
+	if group.parent:
+		group.recast()
+
+def SimplifyExpression(tokens):
+	# Add in implied multiplication
+	HandleImplications(tokens)
+	# Solve Groups
+	Groupings = [g for g in tokens if isinstance(g, Grouping)]
+	for g in Groupings:
+		SimplifyGroup(g)
+	# Solve Functions
+	Functions = getAllChildrenAs(tokens, KeywordToken)# [f for f in tokens if isinstance(f, KeywordToken)]
+	for f in reversed(Functions):
+		f.Solve()
 	
 	Operation = firstByOrder(tokens, OrderOfOperations)
 	while Operation:
@@ -148,6 +181,9 @@ class Expression:
 		else:
 			self.result = Simple
 
+# TODO: Solve innermost functions/constants first
+	# You can do this my solving the functions starting from the back and moving up the tokenlist.
+	# Or you can just differentiate between functions and constants. Probably a good idea to do this.
 
 if __name__ == "__main__":
 	request = input("Input an expression: ")
